@@ -1,0 +1,7 @@
+management:
+  tracing:
+    baggage:
+      remote-fields:
+        - key1
+    sampling:
+      probability: 1.0
