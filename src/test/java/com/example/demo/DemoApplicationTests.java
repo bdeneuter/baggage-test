@@ -44,8 +44,12 @@ class DemoApplicationTests {
 
 			// WHEN
 			propagator.inject(tracer.currentTraceContext().context(), carrier, HashMap::put);
+
+			// THEN
+			assertThat(carrier.get(KEY_1)).isEqualTo(VALUE_1);
 		}
 
+		// WHEN
 		var extractedSpan = propagator.extract(carrier, HashMap::get).start();
 
 		// THEN
