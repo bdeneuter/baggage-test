@@ -17,6 +17,7 @@ class DemoApplicationTests {
 
 	public static final String KEY_1 = "key1";
 	public static final String VALUE_1 = "value1";
+	@Autowired private Kafka kafka;
 	@Autowired private Tracer tracer;
 	@Autowired private Propagator propagator;
 
@@ -60,5 +61,39 @@ class DemoApplicationTests {
 			}
 		}
 	}
+
+	@Test
+	void fakeKafkaExample() {
+		// GIVEN
+		var span = tracer.nextSpan().start();
+		try(var spanInScope = tracer.withSpan(span)) {
+			tracer.createBaggage(KEY_1, VALUE_1);
+			kafka.publish("event 1");
+		}
+
+		// WHEN
+		kafka.consume(message -> {
+
+			// THEN
+			assertThat(message).isEqualTo("event 1");
+			try(var baggage = tracer.getBaggage(KEY_1).makeCurrent()) {
+				assertThat(baggage.get()).isEqualTo(VALUE_1);
+			}
+
+			// WHEN
+			kafka.publish("event 2");
+
+			// THEN
+			kafka.consume(message2 -> {
+				assertThat(message2).isEqualTo("event 2");
+				try(var baggage = tracer.getBaggage(KEY_1).makeCurrent()) {
+					assertThat(baggage.get()).isEqualTo(VALUE_1);
+				}
+			});
+
+		});
+	}
+
+
 
 }
