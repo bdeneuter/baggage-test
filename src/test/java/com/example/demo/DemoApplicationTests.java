@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import io.micrometer.tracing.Baggage;
+import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.propagation.Propagator;
 import org.junit.jupiter.api.Test;
@@ -92,6 +94,26 @@ class DemoApplicationTests {
 			});
 
 		});
+	}
+
+	@Test
+	void baggageShouldBePassedToChildSpans() {
+		// GIVEN
+		var span = tracer.nextSpan().start();
+		try(var spanInScope = tracer.withSpan(span)) {
+			tracer.createBaggage(KEY_1, VALUE_1);
+
+			// WHEN
+			var childSpan = tracer.nextSpan().start();
+			try(var childSpanInScope = tracer.withSpan(childSpan)) {
+
+				// THEN
+				try(var baggage = tracer.getBaggage(KEY_1).makeCurrent()) {
+					assertThat(baggage.get()).isEqualTo(VALUE_1);
+				}
+			}
+
+		}
 	}
 
 
